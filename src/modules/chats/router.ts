@@ -1,25 +1,24 @@
-import { t } from "elysia";
 import { createMockAuthController } from "../../auth/auth.mock";
+import { ErrorResponse } from "../../common/dtos";
+import { ChatParams } from "./dto/request.dto";
+import { ChatService } from "./service";
 
 export const chatsRouter = createMockAuthController("chats")
   .get(
     "/",
     async ({ decodedToken }) => {
-      return {};
+      return await ChatService.listUserChats(decodedToken);
     },
     {
-      params: t.Object({
-        chatId: t.String(),
-      }),
+      params: ChatParams,
       // body: CreateTaskRequestDTO,
-      // response: {
-      //   200: CreateTaskResponseDTO,
-      //   400: ErrorResponse,
-      //   401: ErrorResponse,
-      //   403: ErrorResponse,
-      //   404: ErrorResponse,
-      //   500: ErrorResponse,
-      // },
+      response: {
+        400: ErrorResponse,
+        401: ErrorResponse,
+        403: ErrorResponse,
+        404: ErrorResponse,
+        500: ErrorResponse,
+      },
       detail: {
         tags: ["Chats"],
         description: "List of user's chats",
@@ -29,21 +28,18 @@ export const chatsRouter = createMockAuthController("chats")
   .get(
     "/:chatId/history",
     async ({ decodedToken }) => {
-      return {};
+      return await ChatService.getUserChatHistory(decodedToken);
     },
     {
-      params: t.Object({
-        chatId: t.String(),
-      }),
+      params: ChatParams,
       // body: CreateTaskRequestDTO,
-      // response: {
-      //   200: CreateTaskResponseDTO,
-      //   400: ErrorResponse,
-      //   401: ErrorResponse,
-      //   403: ErrorResponse,
-      //   404: ErrorResponse,
-      //   500: ErrorResponse,
-      // },
+      response: {
+        400: ErrorResponse,
+        401: ErrorResponse,
+        403: ErrorResponse,
+        404: ErrorResponse,
+        500: ErrorResponse,
+      },
       detail: {
         tags: ["Chats"],
         description: "Message history for a specific chat",
@@ -53,21 +49,18 @@ export const chatsRouter = createMockAuthController("chats")
   .post(
     "/:chatId/completion",
     async ({ decodedToken }) => {
-      return {};
+      return await ChatService.getUserChatCompletion(decodedToken);
     },
     {
-      params: t.Object({
-        chatId: t.String(),
-      }),
+      params: ChatParams,
       // body: CreateTaskRequestDTO,
-      // response: {
-      //   200: CreateTaskResponseDTO,
-      //   400: ErrorResponse,
-      //   401: ErrorResponse,
-      //   403: ErrorResponse,
-      //   404: ErrorResponse,
-      //   500: ErrorResponse,
-      // },
+      response: {
+        400: ErrorResponse,
+        401: ErrorResponse,
+        403: ErrorResponse,
+        404: ErrorResponse,
+        500: ErrorResponse,
+      },
       detail: {
         tags: ["Chats"],
         description: "AI completion with streaming (SSE)",
