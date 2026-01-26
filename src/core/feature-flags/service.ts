@@ -2,6 +2,12 @@ import type { logger as baseLogger } from "../logger";
 import type { FeatureFlagProvider } from "./types";
 
 type LoggerLike = typeof baseLogger;
+type FeatureFlagKey =
+  | "PAGINATION_LIMIT"
+  | "AI_TOOLS_ENABLED"
+  | "STREAMING_ENABLED"
+  | "CHAT_HISTORY_ENABLED"
+  | "CHAT_HISTORY_LIMIT";
 
 export class FeatureFlagService {
   private readonly provider: FeatureFlagProvider;
@@ -12,7 +18,7 @@ export class FeatureFlagService {
     this.logger = logger;
   }
 
-  async get(key: string): Promise<string | number | boolean | undefined> {
+  async get(key: FeatureFlagKey): Promise<string | number | boolean | undefined> {
     const flags = await this.provider.getFlags();
     const config = flags[key];
 
@@ -24,12 +30,12 @@ export class FeatureFlagService {
     return config.value ?? config.default;
   }
 
-  async isEnabled(key: string): Promise<boolean> {
+  async isEnabled(key: FeatureFlagKey): Promise<boolean> {
     const value = await this.get(key);
     return Boolean(value);
   }
 
-  async getNumber(key: string): Promise<number> {
+  async getNumber(key: FeatureFlagKey): Promise<number> {
     const value = await this.get(key);
     return typeof value === "number" ? value : Number(value);
   }
