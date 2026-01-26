@@ -1,4 +1,3 @@
-import { Elysia } from "elysia";
 import { verifyMockFirebaseToken } from "../auth/auth.mock";
 import { UnauthorizedError } from "../common/errors";
 import { logger } from "../core/logger";
@@ -7,8 +6,9 @@ import { logger } from "../core/logger";
  * Middleware: Authentication (Mock JWT)
  * Validates the Authorization header using mock logic and syncs with DB.
  */
-export const authenticationMiddleware = () =>
-  new Elysia({ name: "middleware.authentication" }).derive(async ({ request }) => {
+export const authenticationMiddleware =
+  () =>
+  async ({ request }: { request: Request }) => {
     const authHeader = request.headers.get("authorization");
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -23,4 +23,4 @@ export const authenticationMiddleware = () =>
       logger.error("Authentication failed", error);
       throw new UnauthorizedError("Invalid or expired token");
     }
-  });
+  };

@@ -1,4 +1,3 @@
-import { Elysia } from "elysia";
 import { UnauthorizedError } from "../common/errors";
 import { logger } from "../core/logger";
 
@@ -6,8 +5,9 @@ import { logger } from "../core/logger";
  * Middleware: Firebase App Check Verification (Mock)
  * Verifies the X-Firebase-AppCheck header.
  */
-export const firebaseAppCheckMiddleware = () =>
-  new Elysia({ name: "middleware.firebaseAppCheck" }).derive(({ request }) => {
+export const firebaseAppMiddleware =
+  () =>
+  async ({ request }: { request: Request }) => {
     const appCheckToken = request.headers.get("x-firebase-appcheck");
 
     if (!appCheckToken) {
@@ -16,4 +16,4 @@ export const firebaseAppCheckMiddleware = () =>
     }
 
     return {};
-  });
+  };

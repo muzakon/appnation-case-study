@@ -1,14 +1,16 @@
 import Elysia from "elysia";
+import { logger } from "../core/logger";
 import {
   authenticationMiddleware,
   clientTypeDetectionMiddleware,
-  firebaseAppCheckMiddleware,
-  requestLoggerMiddleware,
+  firebaseAppMiddleware,
 } from "../middlewares";
 
 export const createRouter = (prefix: string) =>
   new Elysia({ prefix })
-    .use(firebaseAppCheckMiddleware)
-    .use(authenticationMiddleware)
-    .use(clientTypeDetectionMiddleware)
-    .use(requestLoggerMiddleware);
+    .derive(firebaseAppMiddleware())
+    .derive(authenticationMiddleware())
+    .derive(clientTypeDetectionMiddleware())
+    .onAfterResponse(({ request, set, path }) => {
+      logger.info(`[${request.method}] ${path} - Status: ${set.status}`);
+    });

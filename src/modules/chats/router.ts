@@ -3,7 +3,7 @@ import { createRouter } from "../../common/router";
 import { ChatParams } from "./dto/request.dto";
 import { ChatService } from "./service";
 
-export const chatsRouter = createRouter("/chats")
+export const chatsRouter = createRouter("chats")
   .get(
     "/",
     async ({ decodedToken }) => {

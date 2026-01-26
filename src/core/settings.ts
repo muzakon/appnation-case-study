@@ -17,7 +17,7 @@ export const appSettings = {
   serviceAccountPath: optionalEnv("SERVICE_ACCOUNT_PATH", ""),
 
   server: {
-    port: parseInt(optionalEnv("PORT", "3000"), 10),
+    port: parseInt(optionalEnv("PORT", "4000"), 10),
     host: optionalEnv("HOST", "0.0.0.0"),
   },
 

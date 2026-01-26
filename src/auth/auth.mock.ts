@@ -1,7 +1,7 @@
 import Elysia from "elysia";
 import { AuthUtils } from "../auth/auth-utils";
 import { UnauthorizedError, ValidationError } from "../common/errors";
-import { AuthProvider, type FirebaseDecodedToken } from "../common/interfaces";
+import type { FirebaseDecodedToken } from "../common/interfaces";
 
 // --- Constants & Defaults ---
 const DEFAULT_MOCK_USER = {
@@ -16,7 +16,6 @@ const DEFAULT_MOCK_USER = {
  * Parses a "mock:key=value:key2=value2" string into a dictionary.
  */
 function parseMockToken(token: string): Record<string, string> {
-  // Remove "mock:" prefix if present
   const rawData = token.startsWith("mock:") ? token.slice(5) : "";
   if (!rawData) return {};
 
