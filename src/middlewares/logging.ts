@@ -6,8 +6,7 @@ import { logger } from "../core/logger";
  * Logs details about the incoming request and the response status.
  * Corresponds to "Logging" in the requirements.
  */
-export const requestLogger = new Elysia({ name: "middleware.requestLogger" }).onAfterResponse(
-  ({ request, set, path }) => {
+export const requestLoggerMiddleware = () =>
+  new Elysia({ name: "middleware.requestLogger" }).onAfterResponse(({ request, set, path }) => {
     logger.info(`[${request.method}] ${path} - Status: ${set.status}`);
-  },
-);
+  });

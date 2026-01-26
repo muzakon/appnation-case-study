@@ -1,16 +1,15 @@
-import { createMockAuthController } from "../../auth/auth.mock";
 import { ErrorResponse } from "../../common/dtos";
+import { createRouter } from "../../common/router";
 import { ChatParams } from "./dto/request.dto";
 import { ChatService } from "./service";
 
-export const chatsRouter = createMockAuthController("chats")
+export const chatsRouter = createRouter("/chats")
   .get(
     "/",
     async ({ decodedToken }) => {
       return await ChatService.listUserChats(decodedToken);
     },
     {
-      params: ChatParams,
       // body: CreateTaskRequestDTO,
       response: {
         400: ErrorResponse,
