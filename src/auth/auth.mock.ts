@@ -95,28 +95,23 @@ function buildDecodedToken(config: {
   };
 }
 
-export const mockAuthDerive = () =>
-  new Elysia().derive(async ({ headers }) => {
-    const authorization = headers["authorization"];
-    const token = AuthUtils.extractTokenFromHeader(authorization);
-
+export const mockAuthDerive =
+  () =>
+  async ({ headers }: { headers: Record<string, string | undefined> }) => {
+    const token = AuthUtils.extractTokenFromHeader(headers.authorization);
     if (!token) {
-      throw new UnauthorizedError("Authentication required (Mock Mode)");
+      throw new UnauthorizedError("Authentication required");
     }
 
     try {
       const decodedToken = await verifyMockFirebaseToken(token);
-      return { decodedToken };
-    } catch (error) {
-      // Log the real error for debugging, but throw standard Unauthorized to client
-      console.warn(`Mock Auth Failed: ${error instanceof Error ? error.message : "Unknown error"}`);
-
-      if (error instanceof ValidationError) {
-        throw error; // Re-throw validation errors (e.g. missing email)
-      }
-      throw new UnauthorizedError("Invalid or expired mock token");
+      return {
+        decodedToken,
+      };
+    } catch (_error) {
+      throw new UnauthorizedError("Authentication required");
     }
-  });
+  };
 
 export const createMockAuthController = (prefix: string) =>
-  new Elysia({ prefix }).use(mockAuthDerive());
+  new Elysia({ prefix }).derive(mockAuthDerive());
