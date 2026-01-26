@@ -22,8 +22,14 @@ export class ChatRepository {
     });
   }
 
-  async listUserChats(userId: string, tx?: TransactionClient): Promise<Chat[]> {
-    const client = tx ?? this.db;
+  async listUserChats(
+    userId: string,
+    options?: {
+      limit?: number;
+      tx?: TransactionClient;
+    },
+  ): Promise<Chat[]> {
+    const client = options?.tx ?? this.db;
     return client.chat.findMany({
       where: {
         userId,
@@ -31,6 +37,7 @@ export class ChatRepository {
       orderBy: {
         updatedAt: "desc",
       },
+      take: options?.limit,
     });
   }
 }

@@ -12,6 +12,7 @@ export function createApp() {
     .decorate("db", container.db)
     .decorate("settings", container.settings)
     .decorate("logger", container.logger)
+    .decorate("featureFlags", container.featureFlags)
     .use(
       openapi({
         provider: "swagger-ui",
@@ -62,7 +63,14 @@ export function createApp() {
         detail: "An unexpected error occurred",
       };
     })
-    .group("/api", (app) => app.use(createChatsRouter({ chatService: container.services.chats })));
+    .group("/api", (app) =>
+      app.use(
+        createChatsRouter({
+          chatService: container.services.chats,
+          completionResponder: container.strategies.chatCompletion,
+        }),
+      ),
+    );
 
   return app;
 }

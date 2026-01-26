@@ -2,14 +2,17 @@ import { ErrorResponse } from "../../common/dtos";
 import { createRouter } from "../../common/router";
 import { ChatParams } from "./dto/request.dto";
 import type { ChatService } from "./service";
+import type { ChatCompletionResponseSelector } from "./strategies";
 
 export type ChatRouterDeps = {
   chatService: ChatService;
+  completionResponder: ChatCompletionResponseSelector;
 };
 
-export const createChatsRouter = ({ chatService }: ChatRouterDeps) =>
+export const createChatsRouter = ({ chatService, completionResponder }: ChatRouterDeps) =>
   createRouter("chats")
     .decorate("chatService", chatService)
+    .decorate("completionResponder", completionResponder)
     .get(
       "/",
       async ({ decodedToken, chatService }) => {
@@ -53,8 +56,9 @@ export const createChatsRouter = ({ chatService }: ChatRouterDeps) =>
     )
     .post(
       "/:chatId/completion",
-      async ({ decodedToken, params, chatService }) => {
-        return await chatService.getUserChatCompletion(decodedToken, params.chatId);
+      async ({ decodedToken, params, chatService, completionResponder }) => {
+        const result = await chatService.getUserChatCompletion(decodedToken, params.chatId);
+        return completionResponder.respond(result);
       },
       {
         params: ChatParams,
