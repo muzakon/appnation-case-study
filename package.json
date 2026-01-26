@@ -6,10 +6,10 @@
     "dev": "bun run --watch src/index.ts",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
-    "typecheck": "bunx tsc --noEmit"
+    "typecheck": "bunx tsc --noEmit",
+    "prepare": "husky"
   },
   "dependencies": {
-    "@elysiajs/openapi": "^1.4.14",
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.3.0",
     "elysia": "latest",
