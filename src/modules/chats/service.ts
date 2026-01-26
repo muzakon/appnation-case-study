@@ -1,39 +1,53 @@
 import { NotFoundError } from "../../common/errors";
 import type { DecodedToken } from "../../common/interfaces";
 import type { Chat, Message } from "../../database/prisma/client";
-import { MessageRepository } from "../messages/repository";
-import { UserRepository } from "../users/repository";
-import { ChatRepository } from "./repository";
+import type { MessageRepository } from "../messages/repository";
+import type { UserRepository } from "../users/repository";
+import type { ChatRepository } from "./repository";
 
-export abstract class ChatService {
-  private static async requireUserId(decodedToken: DecodedToken): Promise<string> {
-    const user = await UserRepository.findUser(decodedToken.id);
+export class ChatService {
+  private readonly userRepository: UserRepository;
+  private readonly messageRepository: MessageRepository;
+  private readonly chatRepository: ChatRepository;
+
+  constructor(
+    userRepository: UserRepository,
+    chatRepository: ChatRepository,
+    messageRepository: MessageRepository,
+  ) {
+    this.userRepository = userRepository;
+    this.chatRepository = chatRepository;
+    this.messageRepository = messageRepository;
+  }
+
+  private async requireUserId(decodedToken: DecodedToken): Promise<string> {
+    const user = await this.userRepository.findUser(decodedToken.id);
     if (!user) {
       throw new NotFoundError("User", decodedToken.id);
     }
     return user.id;
   }
 
-  private static async requireUserChat(userId: string, chatId: string): Promise<void> {
-    const chat = await ChatRepository.findByChatAndUserId(userId, chatId);
+  private async requireUserChat(userId: string, chatId: string): Promise<void> {
+    const chat = await this.chatRepository.findByChatAndUserId(userId, chatId);
     if (!chat) {
       throw new NotFoundError("Chat", chatId);
     }
   }
 
-  static async listUserChats(decodedToken: DecodedToken): Promise<Chat[]> {
-    const userId = await ChatService.requireUserId(decodedToken);
-    return ChatRepository.listUserChats(userId);
+  async listUserChats(decodedToken: DecodedToken): Promise<Chat[]> {
+    const userId = await this.requireUserId(decodedToken);
+    return this.chatRepository.listUserChats(userId);
   }
 
-  static async getChatHistory(decodedToken: DecodedToken, chatId: string): Promise<Message[]> {
-    const userId = await ChatService.requireUserId(decodedToken);
-    await ChatService.requireUserChat(userId, chatId);
-    return MessageRepository.findMessages(chatId);
+  async getChatHistory(decodedToken: DecodedToken, chatId: string): Promise<Message[]> {
+    const userId = await this.requireUserId(decodedToken);
+    await this.requireUserChat(userId, chatId);
+    return this.messageRepository.findMessages(chatId);
   }
 
-  static async getUserChatCompletion(decodedToken: DecodedToken, chatId: string): Promise<void> {
-    const userId = await ChatService.requireUserId(decodedToken);
-    await ChatService.requireUserChat(userId, chatId);
+  async getUserChatCompletion(decodedToken: DecodedToken, chatId: string): Promise<void> {
+    const userId = await this.requireUserId(decodedToken);
+    await this.requireUserChat(userId, chatId);
   }
 }

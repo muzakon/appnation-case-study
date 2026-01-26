@@ -1,12 +1,17 @@
 import openapi from "@elysiajs/openapi";
 import { Elysia } from "elysia";
 import { AppError } from "../common/errors";
-
 // Modules
-import { chatsRouter } from "../modules/chats/router";
+import { createChatsRouter } from "../modules/chats/router";
+import { createAppContainer } from "./container";
 
 export function createApp() {
+  const container = createAppContainer();
+
   const app = new Elysia()
+    .decorate("db", container.db)
+    .decorate("settings", container.settings)
+    .decorate("logger", container.logger)
     .use(
       openapi({
         provider: "swagger-ui",
@@ -57,7 +62,7 @@ export function createApp() {
         detail: "An unexpected error occurred",
       };
     })
-    .group("/api", (app) => app.use(chatsRouter));
+    .group("/api", (app) => app.use(createChatsRouter({ chatService: container.services.chats })));
 
   return app;
 }
