@@ -3,12 +3,15 @@
   "version": "1.0.50",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "bun run --watch src/index.ts"
+    "dev": "bun run --watch src/index.ts",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write ."
   },
   "dependencies": {
     "elysia": "latest"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.3.12",
     "bun-types": "latest"
   },
   "module": "src/index.js"
