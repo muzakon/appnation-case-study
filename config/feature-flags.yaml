@@ -1,5 +1,33 @@
-STREAMING_ENABLED: true
-PAGINATION_LIMIT: 20
-AI_TOOLS_ENABLED: false
-CHAT_HISTORY_ENABLED: true
-CHAT_HISTORY_LIMIT: 100
+STREAMING_ENABLED:
+  type: boolean
+  value: true
+  default: true
+  description: "Enable streaming responses for chat"
+
+PAGINATION_LIMIT:
+  type: number
+  value: 20
+  default: 20
+  min: 10
+  max: 100
+  description: "Default number of items per page"
+
+AI_TOOLS_ENABLED:
+  type: boolean
+  value: false
+  default: false
+  description: "Enable AI tools integration"
+
+CHAT_HISTORY_ENABLED:
+  type: boolean
+  value: true
+  default: true
+  description: "Enable chat history storage"
+
+CHAT_HISTORY_LIMIT:
+  type: number
+  value: 10
+  default: 10
+  min: 1
+  max: 100
+  description: "Number of messages to keep in history context"

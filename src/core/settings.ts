@@ -35,10 +35,6 @@ export const appSettings = {
     idleTimeout: parseInt(optionalEnv("DB_IDLE_TIMEOUT", "30000"), 10),
     connectionTimeout: parseInt(optionalEnv("DB_CONNECTION_TIMEOUT", "5000"), 10),
   },
-
-  featureFlags: {
-    filePath: optionalEnv("FEATURE_FLAGS_FILE", "config/feature-flags.yaml"),
-  },
 } as const;
 
 export type AppSettings = typeof appSettings;

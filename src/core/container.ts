@@ -42,7 +42,6 @@ export function createAppContainer(): AppContainer {
   const featureFlagLogger = logger.child("FeatureFlags");
 
   const featureFlagProvider = new FileFeatureFlagProvider({
-    path: appSettings.featureFlags.filePath,
     logger: featureFlagLogger,
   });
   const featureFlags = new FeatureFlagService(featureFlagProvider, featureFlagLogger);
