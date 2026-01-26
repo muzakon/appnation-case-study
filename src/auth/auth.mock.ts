@@ -41,18 +41,12 @@ function parseMockToken(token: string): Record<string, string> {
  * - Bearer mock:provider=github.com:email=test@pixelic.ai:sub=123:db=tenant_1
  */
 export async function verifyMockFirebaseToken(token: string): Promise<DecodedToken> {
-  // 1. Handle simple "mock" case
-  if (token === "mock") {
-    return buildDecodedToken({ id: randomUUID(), ...DEFAULT_MOCK_USER });
-  }
-
-  // 2. Handle parameterized "mock:..." case
   if (token.startsWith("mock:")) {
     const params = parseMockToken(token);
 
     // Merge defaults with parsed params
     const config = {
-      id: randomUUID(),
+      id: params.id ?? randomUUID(),
       name: params.name ?? DEFAULT_MOCK_USER.name,
       picture: params.picture ?? DEFAULT_MOCK_USER.picture,
       sub: params.sub ?? DEFAULT_MOCK_USER.sub,
@@ -68,7 +62,7 @@ export async function verifyMockFirebaseToken(token: string): Promise<DecodedTok
     return buildDecodedToken(config);
   }
 
-  throw new UnauthorizedError("Invalid mock token format. Must start with 'mock' or 'mock:'");
+  throw new UnauthorizedError("Invalid mock token format. Must start with 'mock:'");
 }
 
 /**
