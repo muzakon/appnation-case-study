@@ -106,7 +106,7 @@ async function stopDatabase(): Promise<void> {
 }
 
 lifespan.register({
-  name: "PRISMA",
+  name: "Database",
   priority: 100,
   onStart: startDatabase,
   onStop: stopDatabase,

@@ -1,5 +1,50 @@
-import { Elysia } from "elysia";
+import { createApp } from "./core/app";
+import { lifespan } from "./core/lifespan";
+import { createLogger } from "./core/logger";
+import { appSettings } from "./core/settings";
 
-const app = new Elysia().get("/", () => "Hello Elysia").listen(4000);
+// Lifespan Imports
+import "./core/database";
 
-console.log(`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`);
+const logger = createLogger("Main");
+
+async function main() {
+  await lifespan.start();
+  const app = createApp();
+
+  app.listen({
+    port: appSettings.server.port,
+    hostname: appSettings.server.host,
+  });
+
+  logger.info(`Server running at http://${appSettings.server.host}:${appSettings.server.port}`);
+  logger.info(`Environment: ${appSettings.env}`);
+
+  const shutdown = async (signal: string) => {
+    logger.info(`Received ${signal}, shutting down gracefully...`);
+
+    app.stop();
+    await lifespan.stop();
+
+    logger.info("Shutdown complete");
+    process.exit(0);
+  };
+
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
+
+  process.on("uncaughtException", (error) => {
+    logger.error("Uncaught exception", error);
+    shutdown("uncaughtException");
+  });
+
+  process.on("unhandledRejection", (reason) => {
+    logger.error("Unhandled rejection", reason as Error);
+    shutdown("unhandledRejection");
+  });
+}
+
+main().catch((error) => {
+  logger.error("Failed to start application", error);
+  process.exit(1);
+});
