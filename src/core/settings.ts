@@ -25,6 +25,10 @@ export const appSettings = {
     level: optionalEnv("LOG_LEVEL", "info"),
   },
 
+  redis: {
+    url: requireEnv("REDIS_URL"),
+  },
+
   database: {
     url: requireEnv("DATABASE_URL"),
     poolSize: parseInt(optionalEnv("DB_POOL_SIZE", "10"), 10),

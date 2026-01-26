@@ -5,6 +5,7 @@ import { appSettings } from "./core/settings";
 
 // Lifespan Imports
 import "./core/database";
+import "./core/redis";
 
 const logger = createLogger("Main");
 
