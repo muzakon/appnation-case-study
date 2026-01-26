@@ -9,15 +9,21 @@
     "typecheck": "bunx tsc --noEmit"
   },
   "dependencies": {
-    "elysia": "latest"
+    "@prisma/adapter-pg": "^7.3.0",
+    "@prisma/client": "^7.3.0",
+    "elysia": "latest",
+    "pg": "^8.17.2"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.12",
     "@commitlint/cli": "^20.3.1",
     "@commitlint/config-conventional": "^20.3.1",
+    "@types/node": "^25.0.10",
+    "@types/pg": "^8.16.0",
     "bun-types": "latest",
     "husky": "^9.1.7",
-    "lint-staged": "^16.2.7"
+    "lint-staged": "^16.2.7",
+    "prisma": "^7.3.0"
   },
   "lint-staged": {
     "**/*.{ts,tsx,js,jsx,json,jsonc}": [
