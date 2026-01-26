@@ -1,0 +1,23 @@
+# Use the official Bun image
+FROM oven/bun:1
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json bun.lock ./
+# COPY prisma ./prisma/
+
+# Install dependencies
+RUN bun install --frozen-lockfile
+
+# Generate Prisma client
+# RUN bun run db:generate
+
+# Copy source code
+COPY . .
+
+# Expose port
+EXPOSE 4000
+
+# Start the development server with hot reload
+CMD ["bun", "run", "dev"]
