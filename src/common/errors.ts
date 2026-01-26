@@ -114,11 +114,7 @@ export class BadRequestError extends AppError {
  */
 export class RateLimitExceededError extends AppError {
   constructor() {
-    super(
-      `Rate limit exceeded.`,
-      429,
-      "RATE_LIMIT_EXCEEDED",
-    );
+    super(`Rate limit exceeded.`, 429, "RATE_LIMIT_EXCEEDED");
     this.name = "RateLimitExceededError";
   }
 }
