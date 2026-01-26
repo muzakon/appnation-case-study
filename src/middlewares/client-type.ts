@@ -5,19 +5,32 @@
 export const clientTypeDetectionMiddleware =
   () =>
   async ({ request }: { request: Request }) => {
-    const userAgent = request.headers.get("user-agent") || "";
-    let clientType: "mobile" | "web" | "desktop" | "unknown" = "unknown";
+    const userAgent = (request.headers.get("user-agent") || "").toLowerCase();
 
-    if (userAgent.includes("Mozilla") && !userAgent.includes("Mobile")) {
-      clientType = "web";
-    } else if (
-      userAgent.includes("Mobile") ||
-      userAgent.includes("Android") ||
-      userAgent.includes("iPhone")
-    ) {
-      clientType = "mobile";
-    } else if (userAgent.includes("Electron") || userAgent.includes("Desktop")) {
-      clientType = "desktop";
+    let clientType: "mobile" | "web" | "desktop" | "postman" | "unknown" = "unknown";
+
+    switch (true) {
+      // Development için bunu da ekleyelim
+      case userAgent.includes("postman"):
+        clientType = "postman";
+        break;
+
+      case userAgent.includes("electron") || userAgent.includes("desktop"):
+        clientType = "desktop";
+        break;
+
+      case userAgent.includes("mobile") ||
+        userAgent.includes("android") ||
+        userAgent.includes("iphone"):
+        clientType = "mobile";
+        break;
+
+      case userAgent.includes("mozilla") && !userAgent.includes("mobile"):
+        clientType = "web";
+        break;
+
+      default:
+        clientType = "unknown";
     }
 
     return { clientType };

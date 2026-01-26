@@ -26,8 +26,8 @@ export const chatsRouter = createRouter("chats")
   )
   .get(
     "/:chatId/history",
-    async ({ decodedToken }) => {
-      return await ChatService.getUserChatHistory(decodedToken);
+    async ({ decodedToken, params }) => {
+      return await ChatService.getChatHistory(decodedToken, params.chatId);
     },
     {
       params: ChatParams,
@@ -47,8 +47,8 @@ export const chatsRouter = createRouter("chats")
   )
   .post(
     "/:chatId/completion",
-    async ({ decodedToken }) => {
-      return await ChatService.getUserChatCompletion(decodedToken);
+    async ({ decodedToken, params }) => {
+      return await ChatService.getUserChatCompletion(decodedToken, params.chatId);
     },
     {
       params: ChatParams,

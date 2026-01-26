@@ -5,7 +5,8 @@ export enum AuthProvider {
   PASSWORD = "PASSWORD",
 }
 
-export interface FirebaseDecodedToken {
+export interface DecodedToken {
+  id: string;
   name?: string;
   picture?: string;
   sub: string;

@@ -7,7 +7,6 @@ import { chatsRouter } from "../modules/chats/router";
 
 export function createApp() {
   const app = new Elysia()
-    .get("/", () => "Hello World")
     .use(
       openapi({
         provider: "swagger-ui",

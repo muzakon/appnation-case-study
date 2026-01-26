@@ -1,7 +1,8 @@
+import { randomUUID } from "node:crypto";
 import Elysia from "elysia";
 import { AuthUtils } from "../auth/auth-utils";
 import { UnauthorizedError, ValidationError } from "../common/errors";
-import type { FirebaseDecodedToken } from "../common/interfaces";
+import type { DecodedToken } from "../common/interfaces";
 
 // --- Constants & Defaults ---
 const DEFAULT_MOCK_USER = {
@@ -39,10 +40,10 @@ function parseMockToken(token: string): Record<string, string> {
  * - Bearer mock:email=test@pixelic.ai
  * - Bearer mock:provider=github.com:email=test@pixelic.ai:sub=123:db=tenant_1
  */
-export async function verifyMockFirebaseToken(token: string): Promise<FirebaseDecodedToken> {
+export async function verifyMockFirebaseToken(token: string): Promise<DecodedToken> {
   // 1. Handle simple "mock" case
   if (token === "mock") {
-    return buildDecodedToken(DEFAULT_MOCK_USER);
+    return buildDecodedToken({ id: randomUUID(), ...DEFAULT_MOCK_USER });
   }
 
   // 2. Handle parameterized "mock:..." case
@@ -51,6 +52,7 @@ export async function verifyMockFirebaseToken(token: string): Promise<FirebaseDe
 
     // Merge defaults with parsed params
     const config = {
+      id: randomUUID(),
       name: params.name ?? DEFAULT_MOCK_USER.name,
       picture: params.picture ?? DEFAULT_MOCK_USER.picture,
       sub: params.sub ?? DEFAULT_MOCK_USER.sub,
@@ -73,14 +75,16 @@ export async function verifyMockFirebaseToken(token: string): Promise<FirebaseDe
  * Helper to construct the FirebaseDecodedToken object
  */
 function buildDecodedToken(config: {
+  id: string;
   name: string;
   picture: string;
   sub: string;
   email: string;
   provider: string;
   emailVerified?: boolean;
-}): FirebaseDecodedToken {
+}): DecodedToken {
   return {
+    id: config.id,
     name: config.name,
     picture: config.picture,
     sub: config.sub,
