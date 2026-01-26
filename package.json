@@ -12,7 +12,10 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.12",
-    "bun-types": "latest"
+    "@commitlint/cli": "^20.3.1",
+    "@commitlint/config-conventional": "^20.3.1",
+    "bun-types": "latest",
+    "husky": "^9.1.7"
   },
   "module": "src/index.js"
 }
