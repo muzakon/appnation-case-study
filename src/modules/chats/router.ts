@@ -1,6 +1,6 @@
 import { ErrorResponse } from "../../common/dtos";
 import { createRouter } from "../../common/router";
-import { ChatParams } from "./dto/request.dto";
+import { ChatParams, CreateChat } from "./dto/request.dto";
 import type { ChatService } from "./service";
 import type { ChatCompletionResponseSelector } from "./strategies";
 
@@ -62,7 +62,7 @@ export const createChatsRouter = ({ chatService, completionResponder }: ChatRout
       },
       {
         params: ChatParams,
-        // body: CreateTaskRequestDTO,
+        body: CreateChat,
         response: {
           400: ErrorResponse,
           401: ErrorResponse,

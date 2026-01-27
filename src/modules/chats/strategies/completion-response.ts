@@ -1,3 +1,4 @@
+import { vercelAIManager } from "../../../common/ai-sdk";
 import type { FeatureFlagService } from "../../../core/feature-flags";
 import type { ChatCompletionResult } from "../types";
 
@@ -14,7 +15,7 @@ export class JsonCompletionResponseStrategy implements ChatCompletionResponseStr
 export class StreamingCompletionResponseStrategy implements ChatCompletionResponseStrategy {
   async respond(result: ChatCompletionResult): Promise<Response> {
     const encoder = new TextEncoder();
-    const chunks = result.content.split(" ").filter(Boolean);
+    const { textStream } = await vercelAIManager.streamText(result.content, result.content);
 
     const stream = new ReadableStream({
       start(controller) {
@@ -27,12 +28,21 @@ export class StreamingCompletionResponseStrategy implements ChatCompletionRespon
           send("tool", { toolCalls: result.toolCalls });
         }
 
-        for (const chunk of chunks) {
-          send("message", { chunk });
-        }
+        void (async () => {
+          try {
+            for await (const chunk of textStream) {
+              send("message", { chunk });
+            }
 
-        send("done", { chatId: result.chatId });
-        controller.close();
+            send("done", { chatId: result.chatId });
+          } catch (error) {
+            send("error", {
+              message: error instanceof Error ? error.message : "Streaming error",
+            });
+          } finally {
+            controller.close();
+          }
+        })();
       },
     });
 

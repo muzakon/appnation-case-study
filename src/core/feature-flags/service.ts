@@ -7,7 +7,8 @@ type FeatureFlagKey =
   | "AI_TOOLS_ENABLED"
   | "STREAMING_ENABLED"
   | "CHAT_HISTORY_ENABLED"
-  | "CHAT_HISTORY_LIMIT";
+  | "CHAT_HISTORY_LIMIT"
+  | "RATE_LIMIT_PER_MINUTE";
 
 export class FeatureFlagService {
   private readonly provider: FeatureFlagProvider;
@@ -38,19 +39,5 @@ export class FeatureFlagService {
   async getNumber(key: FeatureFlagKey): Promise<number> {
     const value = await this.get(key);
     return typeof value === "number" ? value : Number(value);
-  }
-
-  async snapshot(): Promise<Record<string, string | number | boolean>> {
-    const flags = await this.provider.getFlags();
-    const result: Record<string, string | number | boolean> = {};
-
-    for (const [key, config] of Object.entries(flags)) {
-      const value = config.value ?? config.default;
-      if (value !== undefined) {
-        result[key] = value;
-      }
-    }
-
-    return result;
   }
 }

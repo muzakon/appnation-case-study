@@ -1,3 +1,4 @@
+import { vercelAIManager } from "../../common/ai-sdk";
 import { NotFoundError } from "../../common/errors";
 import type { DecodedToken } from "../../common/interfaces";
 import type { FeatureFlagService } from "../../core/feature-flags";
@@ -63,9 +64,10 @@ export class ChatService {
     await this.requireUserChat(userId, chatId);
 
     const toolResult = await this.toolSelector.execute({ chatId, userId });
-    const content = toolResult.toolsUsed
-      ? "Mocked completion response with tools."
-      : "Mocked completion response without tools.";
+    const prompt = toolResult.toolsUsed
+      ? `Generate a response for chat ${chatId} using tools.`
+      : `Generate a response for chat ${chatId} without tools.`;
+    const content = await vercelAIManager.generateText(prompt);
 
     return {
       chatId,
