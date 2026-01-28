@@ -1,5 +1,5 @@
 import type { DatabaseClient, TransactionClient } from "../../core/database";
-import type { Chat } from "../../database/prisma/client";
+import type { Chat, Prisma } from "../../database/prisma/client";
 
 export class ChatRepository {
   private readonly db: DatabaseClient;
@@ -26,6 +26,7 @@ export class ChatRepository {
     userId: string,
     options?: {
       limit?: number;
+      cursor?: string;
       tx?: TransactionClient;
     },
   ): Promise<Chat[]> {
@@ -34,10 +35,48 @@ export class ChatRepository {
       where: {
         userId,
       },
-      orderBy: {
-        updatedAt: "desc",
-      },
+      orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
       take: options?.limit,
+      ...(options?.cursor
+        ? {
+            cursor: {
+              id: options.cursor,
+            },
+            skip: 1,
+          }
+        : {}),
     });
+  }
+
+  async countUserChats(
+    userId: string,
+    options?: {
+      beforeOrEqual?: {
+        updatedAt: Date;
+        id: string;
+      };
+      tx?: TransactionClient;
+    },
+  ): Promise<number> {
+    const client = options?.tx ?? this.db;
+    const where: Prisma.ChatWhereInput = { userId };
+
+    if (options?.beforeOrEqual) {
+      where.OR = [
+        {
+          updatedAt: {
+            gt: options.beforeOrEqual.updatedAt,
+          },
+        },
+        {
+          updatedAt: options.beforeOrEqual.updatedAt,
+          id: {
+            gte: options.beforeOrEqual.id,
+          },
+        },
+      ];
+    }
+
+    return client.chat.count({ where });
   }
 }

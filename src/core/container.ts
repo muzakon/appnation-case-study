@@ -3,10 +3,7 @@ import { ChatRepository } from "../modules/chats/repository";
 import { ChatService } from "../modules/chats/service";
 import {
   ChatCompletionResponseSelector,
-  ChatHistoryStrategySelector,
-  FullChatHistoryStrategy,
   JsonCompletionResponseStrategy,
-  RecentChatHistoryStrategy,
   StreamingCompletionResponseStrategy,
   ToolStrategySelector,
   ToolsDisabledStrategy,
@@ -61,17 +58,6 @@ export function createAppContainer(): AppContainer {
     tokenUsage: new TokenUsageRepository(db),
   };
 
-  const historyStrategies = {
-    full: new FullChatHistoryStrategy(repositories.messages),
-    recent: new RecentChatHistoryStrategy(repositories.messages, featureFlags),
-  };
-
-  const historySelector = new ChatHistoryStrategySelector(
-    featureFlags,
-    historyStrategies.full,
-    historyStrategies.recent,
-  );
-
   const toolStrategies = {
     enabled: new ToolsEnabledStrategy(),
     disabled: new ToolsDisabledStrategy(),
@@ -101,7 +87,6 @@ export function createAppContainer(): AppContainer {
       repositories.messages,
       repositories.tokenUsage,
       featureFlags,
-      historySelector,
       toolSelector,
     ),
   };

@@ -8,8 +8,29 @@ import type { MessageRepository } from "../messages/repository";
 import type { TokenUsageRepository } from "../token-usage/repository";
 import type { UserRepository } from "../users/repository";
 import type { ChatRepository } from "./repository";
-import type { ChatHistoryStrategySelector, ToolStrategySelector } from "./strategies";
+import type { ToolStrategySelector } from "./strategies";
 import type { ChatCompletionResult } from "./types";
+
+type PaginationParams = {
+  cursor?: string;
+  limit?: number | string;
+};
+
+type CursorPage<T> = {
+  count: number;
+  page: number;
+  pageSize: number;
+  total: number;
+  hasMore: boolean;
+  cursor: {
+    next?: string;
+    prev?: string;
+  };
+  data: T[];
+};
+
+const MAX_PAGE_SIZE = 100;
+const RECENT_MESSAGES_LIMIT = 10;
 
 export class ChatService {
   private readonly userRepository: UserRepository;
@@ -17,7 +38,6 @@ export class ChatService {
   private readonly messageRepository: MessageRepository;
   private readonly tokenUsageRepository: TokenUsageRepository;
   private readonly featureFlags: FeatureFlagService;
-  private readonly historySelector: ChatHistoryStrategySelector;
   private readonly toolSelector: ToolStrategySelector;
 
   constructor(
@@ -26,7 +46,6 @@ export class ChatService {
     messageRepository: MessageRepository,
     tokenUsageRepository: TokenUsageRepository,
     featureFlags: FeatureFlagService,
-    historySelector: ChatHistoryStrategySelector,
     toolSelector: ToolStrategySelector,
   ) {
     this.userRepository = userRepository;
@@ -34,8 +53,22 @@ export class ChatService {
     this.messageRepository = messageRepository;
     this.tokenUsageRepository = tokenUsageRepository;
     this.featureFlags = featureFlags;
-    this.historySelector = historySelector;
     this.toolSelector = toolSelector;
+  }
+
+  private normalizeLimit(limit: PaginationParams["limit"], fallback: number): number {
+    const parsed =
+      typeof limit === "number"
+        ? limit
+        : typeof limit === "string"
+          ? Number.parseInt(limit, 10)
+          : fallback;
+
+    if (!Number.isFinite(parsed)) {
+      return Math.min(Math.max(fallback, 1), MAX_PAGE_SIZE);
+    }
+
+    return Math.min(Math.max(Math.floor(parsed), 1), MAX_PAGE_SIZE);
   }
 
   private async requireUserId(decodedToken: DecodedToken): Promise<string> {
@@ -53,16 +86,125 @@ export class ChatService {
     }
   }
 
-  async listUserChats(decodedToken: DecodedToken): Promise<Chat[]> {
+  async listUserChats(
+    decodedToken: DecodedToken,
+    params?: PaginationParams,
+  ): Promise<CursorPage<Pick<Chat, "id" | "title">>> {
     const userId = await this.requireUserId(decodedToken);
-    const limit = await this.featureFlags.getNumber("PAGINATION_LIMIT");
-    return this.chatRepository.listUserChats(userId, { limit });
+    const maxLimit = await this.featureFlags.getNumber("PAGINATION_LIMIT");
+    const requestedLimit = this.normalizeLimit(params?.limit, maxLimit);
+    const pageSize = Math.min(requestedLimit, maxLimit);
+
+    const requestedCursor = typeof params?.cursor === "string" ? params.cursor : undefined;
+    const cursorChat = requestedCursor
+      ? await this.chatRepository.findByChatAndUserId(userId, requestedCursor)
+      : null;
+    const cursor = cursorChat ? requestedCursor : undefined;
+
+    const chats = await this.chatRepository.listUserChats(userId, {
+      limit: pageSize + 1,
+      cursor,
+    });
+    const hasMore = chats.length > pageSize;
+    const pageChats = hasMore ? chats.slice(0, pageSize) : chats;
+    const nextCursor = hasMore ? pageChats[pageChats.length - 1]?.id : undefined;
+
+    const total = await this.chatRepository.countUserChats(userId);
+    let page = 1;
+    if (cursorChat) {
+      const offset = await this.chatRepository.countUserChats(userId, {
+        beforeOrEqual: {
+          updatedAt: cursorChat.updatedAt,
+          id: cursorChat.id,
+        },
+      });
+      page = Math.floor(offset / pageSize) + 1;
+    }
+
+    return {
+      count: pageChats.length,
+      page,
+      pageSize,
+      total,
+      hasMore,
+      cursor: {
+        next: nextCursor,
+      },
+      data: pageChats.map(({ id, title }) => ({ id, title })),
+    };
   }
 
-  async getChatHistory(decodedToken: DecodedToken, chatId: string): Promise<Message[]> {
+  async getChatHistory(
+    decodedToken: DecodedToken,
+    chatId: string,
+    params?: PaginationParams,
+  ): Promise<CursorPage<Pick<Message, "id" | "role" | "content">>> {
     const userId = await this.requireUserId(decodedToken);
     await this.requireUserChat(userId, chatId);
-    return this.historySelector.getHistory(chatId);
+
+    const historyEnabled = await this.featureFlags.isEnabled("CHAT_HISTORY_ENABLED");
+
+    if (!historyEnabled) {
+      // Free-tier/mobile: Return only last N messages without pagination
+      const messages = await this.messageRepository.findMessages(chatId, {
+        limit: RECENT_MESSAGES_LIMIT,
+        recent: true,
+      });
+
+      return {
+        count: messages.length,
+        page: 1,
+        pageSize: RECENT_MESSAGES_LIMIT,
+        total: messages.length,
+        hasMore: false,
+        cursor: {},
+        data: messages.map(({ id, role, content }) => ({ id, role, content })),
+      };
+    }
+
+    // Full history with cursor-based pagination
+    const maxLimit = await this.featureFlags.getNumber("PAGINATION_LIMIT");
+    const requestedLimit = this.normalizeLimit(params?.limit, maxLimit);
+    const pageSize = Math.min(requestedLimit, maxLimit);
+
+    const requestedCursor = typeof params?.cursor === "string" ? params.cursor : undefined;
+    const cursorMessage = requestedCursor
+      ? await this.messageRepository.findByChatAndId(chatId, requestedCursor)
+      : null;
+    const cursor = cursorMessage ? requestedCursor : undefined;
+
+    const messages = await this.messageRepository.listMessagesPage(chatId, {
+      limit: pageSize + 1,
+      cursor,
+      order: "asc",
+    });
+    const hasMore = messages.length > pageSize;
+    const pageMessages = hasMore ? messages.slice(0, pageSize) : messages;
+    const nextCursor = hasMore ? pageMessages[pageMessages.length - 1]?.id : undefined;
+
+    const total = await this.messageRepository.countMessages(chatId);
+    let page = 1;
+    if (cursorMessage) {
+      const offset = await this.messageRepository.countMessages(chatId, {
+        beforeOrEqual: {
+          createdAt: cursorMessage.createdAt,
+          id: cursorMessage.id,
+        },
+      });
+      page = Math.floor(offset / pageSize) + 1;
+    }
+
+    return {
+      count: pageMessages.length,
+      page,
+      pageSize,
+      total,
+      hasMore,
+      cursor: {
+        next: nextCursor,
+      },
+      data: pageMessages.map(({ id, role, content }) => ({ id, role, content })),
+    };
   }
 
   async getUserChatCompletion(
@@ -82,7 +224,7 @@ export class ChatService {
     const historyEnabled = await this.featureFlags.isEnabled("CHAT_HISTORY_ENABLED");
     const messages = historyEnabled
       ? await this.messageRepository.findMessages(chatId, {
-          limit: await this.featureFlags.getNumber("PAGINATION_LIMIT"),
+          limit: 10,
           recent: true,
         })
       : [];

@@ -5,7 +5,7 @@ import type { RedisManager } from "../../common/redis";
 import { createRouter } from "../../common/router";
 import type { FeatureFlagService } from "../../core/feature-flags";
 import { rateLimitMiddleware } from "../../middlewares/rate-limit";
-import { ChatParams, CreateChat } from "./dto/request.dto";
+import { ChatParams, CreateChat, PaginationQuery } from "./dto/request.dto";
 import { UserChatHistoryResponse, UserChatsResponse } from "./dto/response.dto";
 import type { ChatService } from "./service";
 import type { ChatCompletionResponseSelector, SSEEvent } from "./strategies";
@@ -41,10 +41,11 @@ export const createChatsRouter = ({
     .decorate("completionResponder", completionResponder)
     .get(
       "/",
-      async ({ decodedToken, chatService }) => {
-        return await chatService.listUserChats(decodedToken);
+      async ({ decodedToken, chatService, query }) => {
+        return await chatService.listUserChats(decodedToken, query);
       },
       {
+        query: PaginationQuery,
         response: {
           200: UserChatsResponse,
           400: ErrorResponse,
@@ -62,11 +63,12 @@ export const createChatsRouter = ({
     )
     .get(
       "/:chatId/history",
-      async ({ decodedToken, params, chatService, set }) => {
-        return await chatService.getChatHistory(decodedToken, params.chatId);
+      async ({ decodedToken, params, chatService, query }) => {
+        return await chatService.getChatHistory(decodedToken, params.chatId, query);
       },
       {
         params: ChatParams,
+        query: PaginationQuery,
         response: {
           200: UserChatHistoryResponse,
           400: ErrorResponse,

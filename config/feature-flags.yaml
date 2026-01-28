@@ -6,11 +6,11 @@ STREAMING_ENABLED:
 
 PAGINATION_LIMIT:
   type: number
-  value: 5
+  value: 20
   default: 20
-  min: 1
+  min: 10
   max: 100
-  description: "Default number of items per page"
+  description: "Controls max items returned in chat list"
 
 AI_TOOLS_ENABLED:
   type: boolean
@@ -22,7 +22,7 @@ CHAT_HISTORY_ENABLED:
   type: boolean
   value: false
   default: true
-  description: "Enable chat history storage"
+  description: "When true, return full message history; when false, return only the last 10 messages"
 
 RATE_LIMIT_PER_MINUTE:
   type: number
