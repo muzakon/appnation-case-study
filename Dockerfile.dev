@@ -20,4 +20,4 @@ COPY . .
 EXPOSE 4000
 
 # Start the development server with hot reload
-CMD ["bun", "run", "dev"]
+CMD ["sh", "-c", "bun run db:migrate:deploy && bun run dev"]
