@@ -1,15 +1,6 @@
 import type { DatabaseClient, TransactionClient } from "../../core/database";
 import type { TokenUsage } from "../../database/prisma/client";
-
-export type CreateTokenUsageData = {
-  userId: string;
-  chatId: string;
-  messageId?: string;
-  inputTokens: number;
-  outputTokens: number;
-  totalTokens: number;
-  model: string;
-};
+import type { CreateTokenUsageData } from "./interfaces";
 
 export class TokenUsageRepository {
   private readonly db: DatabaseClient;

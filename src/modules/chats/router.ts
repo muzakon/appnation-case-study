@@ -1,21 +1,12 @@
 import { sse } from "elysia";
 import { vercelAIManager } from "../../common/ai-sdk";
 import { ErrorResponse } from "../../common/dtos";
-import type { RedisManager } from "../../common/redis";
 import { createRouter } from "../../common/router";
-import type { FeatureFlagService } from "../../core/feature-flags";
 import { rateLimitMiddleware } from "../../middlewares/rate-limit";
 import { ChatParams, CreateChat, PaginationQuery } from "./dto/request.dto";
 import { UserChatHistoryResponse, UserChatsResponse } from "./dto/response.dto";
-import type { ChatService } from "./service";
-import type { ChatCompletionResponseSelector, SSEEvent } from "./strategies";
-
-export type ChatRouterDeps = {
-  chatService: ChatService;
-  completionResponder: ChatCompletionResponseSelector;
-  redis: RedisManager;
-  featureFlags: FeatureFlagService;
-};
+import type { ChatRouterDeps } from "./interfaces";
+import type { SSEEvent } from "./strategies";
 
 export const createChatsRouter = ({
   chatService,
@@ -23,12 +14,6 @@ export const createChatsRouter = ({
   redis,
   featureFlags,
 }: ChatRouterDeps) => {
-  const completionRateLimiter = rateLimitMiddleware({
-    redis,
-    featureFlags,
-    keyPrefix: "completion",
-  });
-
   return createRouter("chats")
     .derive(
       rateLimitMiddleware({
@@ -86,7 +71,7 @@ export const createChatsRouter = ({
     )
     .post(
       "/:chatId/completion",
-      async function* ({ body, decodedToken, params, chatService, completionResponder, set }) {
+      async function* ({ body, decodedToken, params, chatService, completionResponder }) {
         const streamingEnabled = await completionResponder.isStreamingEnabled();
 
         if (!streamingEnabled) {

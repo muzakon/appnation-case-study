@@ -1,5 +1,5 @@
 import type { FeatureFlagService } from "../../../core/feature-flags";
-import type { ToolCall } from "../types";
+import type { ToolCall } from "../interfaces";
 
 export type ToolExecutionContext = {
   chatId: string;

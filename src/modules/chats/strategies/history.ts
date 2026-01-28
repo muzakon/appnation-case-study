@@ -20,11 +20,9 @@ export class FullChatHistoryStrategy implements ChatHistoryStrategy {
 
 export class RecentChatHistoryStrategy implements ChatHistoryStrategy {
   private readonly messageRepository: MessageRepository;
-  private readonly featureFlags: FeatureFlagService;
 
-  constructor(messageRepository: MessageRepository, featureFlags: FeatureFlagService) {
+  constructor(messageRepository: MessageRepository) {
     this.messageRepository = messageRepository;
-    this.featureFlags = featureFlags;
   }
 
   async getHistory(chatId: string): Promise<Message[]> {

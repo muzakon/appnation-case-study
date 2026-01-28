@@ -1,5 +1,5 @@
 import type { FeatureFlagService } from "../../../core/feature-flags";
-import type { ChatCompletionResult, TokenUsageInfo, ToolCall } from "../types";
+import type { ChatCompletionResult, TokenUsageInfo, ToolCall } from "../interfaces";
 
 export type SSEEvent =
   | { event: "thinking"; data: { status: string } }

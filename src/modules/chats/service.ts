@@ -7,27 +7,9 @@ import type { Chat, Message } from "../../database/prisma/client";
 import type { MessageRepository } from "../messages/repository";
 import type { TokenUsageRepository } from "../token-usage/repository";
 import type { UserRepository } from "../users/repository";
+import type { ChatCompletionResult, CursorPage, PaginationParams } from "./interfaces";
 import type { ChatRepository } from "./repository";
 import type { ToolStrategySelector } from "./strategies";
-import type { ChatCompletionResult } from "./types";
-
-type PaginationParams = {
-  cursor?: string;
-  limit?: number | string;
-};
-
-type CursorPage<T> = {
-  count: number;
-  page: number;
-  pageSize: number;
-  total: number;
-  hasMore: boolean;
-  cursor: {
-    next?: string;
-    prev?: string;
-  };
-  data: T[];
-};
 
 const MAX_PAGE_SIZE = 100;
 const RECENT_MESSAGES_LIMIT = 10;
