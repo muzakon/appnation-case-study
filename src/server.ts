@@ -8,17 +8,18 @@ import "./core/database";
 import "./core/redis";
 
 const logger = createLogger("Main");
+const PORT = 4000;
 
 async function main() {
   await lifespan.start();
   const app = createApp();
 
   app.listen({
-    port: appSettings.server.port,
+    port: PORT,
     hostname: appSettings.server.host,
   });
 
-  logger.info(`Server running at http://${appSettings.server.host}:${appSettings.server.port}`);
+  logger.info(`Server running at http://${appSettings.server.host}:${PORT}`);
   logger.info(`Environment: ${appSettings.env}`);
 
   const shutdown = async (signal: string) => {
