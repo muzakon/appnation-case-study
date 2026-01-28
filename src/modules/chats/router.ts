@@ -6,6 +6,7 @@ import { createRouter } from "../../common/router";
 import type { FeatureFlagService } from "../../core/feature-flags";
 import { rateLimitMiddleware } from "../../middlewares/rate-limit";
 import { ChatParams, CreateChat } from "./dto/request.dto";
+import { UserChatHistoryResponse, UserChatsResponse } from "./dto/response.dto";
 import type { ChatService } from "./service";
 import type { ChatCompletionResponseSelector, SSEEvent } from "./strategies";
 
@@ -40,12 +41,12 @@ export const createChatsRouter = ({
     .decorate("completionResponder", completionResponder)
     .get(
       "/",
-      async ({ decodedToken, chatService, set }) => {
-        await completionRateLimiter({ decodedToken, set });
+      async ({ decodedToken, chatService }) => {
         return await chatService.listUserChats(decodedToken);
       },
       {
         response: {
+          200: UserChatsResponse,
           400: ErrorResponse,
           401: ErrorResponse,
           403: ErrorResponse,
@@ -62,12 +63,12 @@ export const createChatsRouter = ({
     .get(
       "/:chatId/history",
       async ({ decodedToken, params, chatService, set }) => {
-        await completionRateLimiter({ decodedToken, set });
         return await chatService.getChatHistory(decodedToken, params.chatId);
       },
       {
         params: ChatParams,
         response: {
+          200: UserChatHistoryResponse,
           400: ErrorResponse,
           401: ErrorResponse,
           403: ErrorResponse,

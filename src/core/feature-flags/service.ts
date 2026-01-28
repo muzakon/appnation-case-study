@@ -7,7 +7,6 @@ type FeatureFlagKey =
   | "AI_TOOLS_ENABLED"
   | "STREAMING_ENABLED"
   | "CHAT_HISTORY_ENABLED"
-  | "CHAT_HISTORY_LIMIT"
   | "RATE_LIMIT_PER_MINUTE";
 
 export class FeatureFlagService {

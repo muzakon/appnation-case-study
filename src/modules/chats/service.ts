@@ -82,7 +82,7 @@ export class ChatService {
     const historyEnabled = await this.featureFlags.isEnabled("CHAT_HISTORY_ENABLED");
     const messages = historyEnabled
       ? await this.messageRepository.findMessages(chatId, {
-          limit: await this.featureFlags.getNumber("CHAT_HISTORY_LIMIT"),
+          limit: await this.featureFlags.getNumber("PAGINATION_LIMIT"),
           recent: true,
         })
       : [];

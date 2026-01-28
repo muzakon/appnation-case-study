@@ -28,7 +28,7 @@ export class RecentChatHistoryStrategy implements ChatHistoryStrategy {
   }
 
   async getHistory(chatId: string): Promise<Message[]> {
-    const limit = await this.featureFlags.getNumber("CHAT_HISTORY_LIMIT");
+    const limit = await this.featureFlags.getNumber("PAGINATION_LIMIT");
     return this.messageRepository.findMessages(chatId, { limit, recent: true });
   }
 }
