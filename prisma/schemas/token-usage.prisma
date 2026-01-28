@@ -9,6 +9,7 @@ model TokenUsage {
   model        String   @default("mock-gpt-4")
   createdAt    DateTime @default(now())
 
+  @@map("token_usages")
   @@index([userId, createdAt])
   @@index([chatId, createdAt])
 }

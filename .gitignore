@@ -43,3 +43,4 @@ package-lock.json
 .env
 /src/database/prisma
 CLAUDE.md
+.claude

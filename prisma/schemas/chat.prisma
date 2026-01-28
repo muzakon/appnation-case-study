@@ -7,5 +7,6 @@ model Chat {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
+  @@map("chats")
   @@index([userId, updatedAt, id])
 }
