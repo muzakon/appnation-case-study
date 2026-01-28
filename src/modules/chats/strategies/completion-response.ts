@@ -1,79 +1,68 @@
-import { vercelAIManager } from "../../../common/ai-sdk";
 import type { FeatureFlagService } from "../../../core/feature-flags";
-import type { ChatCompletionResult } from "../types";
+import type { ChatCompletionResult, TokenUsageInfo, ToolCall } from "../types";
 
-export interface ChatCompletionResponseStrategy {
-  respond(result: ChatCompletionResult): Promise<Response | ChatCompletionResult>;
+export type SSEEvent =
+  | { event: "thinking"; data: { status: string } }
+  | {
+      event: "tool_execution";
+      data: { tool: string; status: "start" | "complete"; input?: unknown; output?: unknown };
+    }
+  | { event: "tool"; data: { toolCalls: ToolCall[] } }
+  | { event: "message"; data: { chunk: string } }
+  | { event: "done"; data: { chatId: string; usage: TokenUsageInfo } }
+  | { event: "error"; data: { message: string; code?: string } };
+
+export type CompletionResponse =
+  | { type: "json"; result: ChatCompletionResult }
+  | { type: "stream"; result: ChatCompletionResult };
+
+export interface CompletionResponseStrategy {
+  getResponseType(): "json" | "stream";
+  prepareResponse(result: ChatCompletionResult): CompletionResponse;
 }
 
-export class JsonCompletionResponseStrategy implements ChatCompletionResponseStrategy {
-  async respond(result: ChatCompletionResult): Promise<ChatCompletionResult> {
-    return result;
+export class JsonCompletionResponseStrategy implements CompletionResponseStrategy {
+  getResponseType(): "json" {
+    return "json";
+  }
+
+  prepareResponse(result: ChatCompletionResult): CompletionResponse {
+    return { type: "json", result };
   }
 }
 
-export class StreamingCompletionResponseStrategy implements ChatCompletionResponseStrategy {
-  async respond(result: ChatCompletionResult): Promise<Response> {
-    const encoder = new TextEncoder();
-    const { textStream } = await vercelAIManager.streamText(result.content, result.content);
+export class StreamingCompletionResponseStrategy implements CompletionResponseStrategy {
+  getResponseType(): "stream" {
+    return "stream";
+  }
 
-    const stream = new ReadableStream({
-      start(controller) {
-        const send = (event: string, payload: unknown) => {
-          const data = `event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`;
-          controller.enqueue(encoder.encode(data));
-        };
-
-        if (result.toolsUsed) {
-          send("tool", { toolCalls: result.toolCalls });
-        }
-
-        void (async () => {
-          try {
-            for await (const chunk of textStream) {
-              send("message", { chunk });
-            }
-
-            send("done", { chatId: result.chatId });
-          } catch (error) {
-            send("error", {
-              message: error instanceof Error ? error.message : "Streaming error",
-            });
-          } finally {
-            controller.close();
-          }
-        })();
-      },
-    });
-
-    return new Response(stream, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive",
-        "X-Accel-Buffering": "no",
-      },
-    });
+  prepareResponse(result: ChatCompletionResult): CompletionResponse {
+    return { type: "stream", result };
   }
 }
 
 export class ChatCompletionResponseSelector {
   private readonly featureFlags: FeatureFlagService;
-  private readonly streaming: ChatCompletionResponseStrategy;
-  private readonly json: ChatCompletionResponseStrategy;
+  private readonly streaming: CompletionResponseStrategy;
+  private readonly json: CompletionResponseStrategy;
 
   constructor(
     featureFlags: FeatureFlagService,
-    streaming: ChatCompletionResponseStrategy,
-    json: ChatCompletionResponseStrategy,
+    streaming: CompletionResponseStrategy,
+    json: CompletionResponseStrategy,
   ) {
     this.featureFlags = featureFlags;
     this.streaming = streaming;
     this.json = json;
   }
 
-  async respond(result: ChatCompletionResult): Promise<Response | ChatCompletionResult> {
-    const streamingEnabled = await this.featureFlags.isEnabled("STREAMING_ENABLED");
-    return streamingEnabled ? this.streaming.respond(result) : this.json.respond(result);
+  async isStreamingEnabled(): Promise<boolean> {
+    return this.featureFlags.isEnabled("STREAMING_ENABLED");
+  }
+
+  async prepareResponse(result: ChatCompletionResult): Promise<CompletionResponse> {
+    const streamingEnabled = await this.isStreamingEnabled();
+    const strategy = streamingEnabled ? this.streaming : this.json;
+    return strategy.prepareResponse(result);
   }
 }

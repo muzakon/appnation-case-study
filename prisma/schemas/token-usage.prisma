@@ -1,0 +1,14 @@
+model TokenUsage {
+  id           String   @id @default(uuid())
+  userId       String
+  chatId       String
+  messageId    String?
+  inputTokens  Int
+  outputTokens Int
+  totalTokens  Int
+  model        String   @default("mock-gpt-4")
+  createdAt    DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([chatId])
+}

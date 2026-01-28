@@ -32,4 +32,20 @@ export class MessageRepository {
     }
     return messages;
   }
+
+  async createMessage(
+    data: {
+      chatId: string;
+      role: string;
+      content: string;
+    },
+    options?: {
+      tx?: TransactionClient;
+    },
+  ): Promise<Message> {
+    const client = options?.tx ?? this.db;
+    return client.message.create({
+      data,
+    });
+  }
 }

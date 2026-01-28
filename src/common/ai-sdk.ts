@@ -1,22 +1,60 @@
 import { streamText as aiStreamText, generateText, simulateReadableStream } from "ai";
 import { MockLanguageModelV3 } from "ai/test";
 
+export type AIChatMessage = {
+  role: "user" | "assistant";
+  content: Array<{ type: "text"; text: string }>;
+};
+
+export type TokenUsage = {
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+};
+
+export type GenerateTextResult = {
+  text: string;
+  usage: TokenUsage;
+  model: string;
+};
+
+export type StreamTextResult = {
+  text: string;
+  textStream: AsyncIterable<string>;
+  usage: TokenUsage;
+  model: string;
+};
+
+const DEFAULT_MODEL = "mock-gpt-4";
+
 class VercelAIManager {
   private buildResponseText(prompt: string): string {
     if (!prompt.trim()) {
       return "Mocked completion response.";
     }
-    return `Thanks for sharing this! I’ve reviewed the details and everything looks good on my end. I like the direction this is heading, and I think with a bit of fine-tuning we can make it even stronger.
+    return `Thanks for sharing this! I've reviewed the details and everything looks good on my end. I like the direction this is heading, and I think with a bit of fine-tuning we can make it even stronger.
 
-Let me know if you’d like me to take the next step or if there’s anything specific you want me to adjust. Happy to iterate 👍`;
+Let me know if you'd like me to take the next step or if there's anything specific you want me to adjust. Happy to iterate 👍`;
   }
 
   private countTokens(text: string): number {
+    // Simple word-based token estimation (roughly 1 token per word)
+    // In production, use a proper tokenizer like tiktoken
     const tokens = text.trim().split(/\s+/).filter(Boolean);
     return tokens.length === 0 ? 1 : tokens.length;
   }
 
-  private buildUsage(prompt: string, output: string) {
+  private calculateUsage(prompt: string, output: string): TokenUsage {
+    const inputTokens = this.countTokens(prompt);
+    const outputTokens = this.countTokens(output);
+    return {
+      inputTokens,
+      outputTokens,
+      totalTokens: inputTokens + outputTokens,
+    };
+  }
+
+  private buildInternalUsage(prompt: string, output: string) {
     const inputTokens = this.countTokens(prompt);
     const outputTokens = this.countTokens(output);
     return {
@@ -117,29 +155,38 @@ Let me know if you’d like me to take the next step or if there’s anything sp
         type: "finish" as const,
         finishReason: { unified: "stop" as const, raw: undefined },
         logprobs: undefined,
-        usage: this.buildUsage(prompt, text),
+        usage: this.buildInternalUsage(prompt, text),
       },
     ];
   }
 
-  async generateText(prompt: string) {
+  async generateText(options: {
+    prompt: string;
+    messages?: AIChatMessage[];
+  }): Promise<GenerateTextResult> {
+    const { prompt, messages } = options;
     const responseText = this.buildResponseText(prompt);
+    const input = messages && messages.length > 0 ? { messages } : { prompt };
     const result = await generateText({
       model: new MockLanguageModelV3({
         doGenerate: async () => ({
           content: [{ type: "text", text: responseText }],
           finishReason: { unified: "stop", raw: undefined },
-          usage: this.buildUsage(prompt, responseText),
+          usage: this.buildInternalUsage(prompt, responseText),
           warnings: [],
         }),
       }),
-      prompt,
+      ...input,
     });
 
-    return result.text;
+    return {
+      text: result.text,
+      usage: this.calculateUsage(prompt, responseText),
+      model: DEFAULT_MODEL,
+    };
   }
 
-  async streamText(prompt: string, responseText?: string) {
+  async streamText(prompt: string, responseText?: string): Promise<StreamTextResult> {
     const text = responseText ?? this.buildResponseText(prompt);
     const result = aiStreamText({
       model: new MockLanguageModelV3({
@@ -156,7 +203,28 @@ Let me know if you’d like me to take the next step or if there’s anything sp
     return {
       text,
       textStream: result.textStream,
+      usage: this.calculateUsage(prompt, text),
+      model: DEFAULT_MODEL,
     };
+  }
+
+  async *streamTextGenerator(prompt: string, responseText?: string): AsyncGenerator<string> {
+    const { textStream } = await this.streamText(prompt, responseText);
+    for await (const chunk of textStream) {
+      yield chunk;
+    }
+  }
+
+  /**
+   * Calculate token usage for a given prompt and response
+   * Useful for pre-calculating usage before storage
+   */
+  calculateTokenUsage(prompt: string, response: string): TokenUsage {
+    return this.calculateUsage(prompt, response);
+  }
+
+  getModel(): string {
+    return DEFAULT_MODEL;
   }
 }
 

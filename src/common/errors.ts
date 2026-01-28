@@ -118,3 +118,17 @@ export class RateLimitExceededError extends AppError {
     this.name = "RateLimitExceededError";
   }
 }
+
+/**
+ * Too many requests error with retry information.
+ * Use for rate limiting with detailed context.
+ */
+export class TooManyRequestsError extends AppError {
+  public details: { retryAfter: number; limit: number };
+
+  constructor(message: string, details: { retryAfter: number; limit: number }) {
+    super(message, 429, "TOO_MANY_REQUESTS");
+    this.name = "TooManyRequestsError";
+    this.details = details;
+  }
+}

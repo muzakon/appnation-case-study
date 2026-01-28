@@ -68,6 +68,8 @@ export function createApp() {
         createChatsRouter({
           chatService: container.services.chats,
           completionResponder: container.strategies.chatCompletion,
+          redis: container.redis,
+          featureFlags: container.featureFlags,
         }),
       ),
     );
