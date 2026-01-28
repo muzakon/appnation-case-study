@@ -4,7 +4,7 @@ import { ErrorResponse } from "../../common/dtos";
 import type { RedisManager } from "../../common/redis";
 import { createRouter } from "../../common/router";
 import type { FeatureFlagService } from "../../core/feature-flags";
-import { createRateLimitMiddleware } from "../../middlewares/rate-limit";
+import { rateLimitMiddleware } from "../../middlewares/rate-limit";
 import { ChatParams, CreateChat } from "./dto/request.dto";
 import type { ChatService } from "./service";
 import type { ChatCompletionResponseSelector, SSEEvent } from "./strategies";
@@ -22,18 +22,26 @@ export const createChatsRouter = ({
   redis,
   featureFlags,
 }: ChatRouterDeps) => {
-  const completionRateLimiter = createRateLimitMiddleware({
+  const completionRateLimiter = rateLimitMiddleware({
     redis,
     featureFlags,
     keyPrefix: "completion",
   });
 
   return createRouter("chats")
+    .derive(
+      rateLimitMiddleware({
+        redis,
+        featureFlags,
+        windowSeconds: 60,
+      }),
+    )
     .decorate("chatService", chatService)
     .decorate("completionResponder", completionResponder)
     .get(
       "/",
-      async ({ decodedToken, chatService }) => {
+      async ({ decodedToken, chatService, set }) => {
+        await completionRateLimiter({ decodedToken, set });
         return await chatService.listUserChats(decodedToken);
       },
       {
@@ -42,6 +50,7 @@ export const createChatsRouter = ({
           401: ErrorResponse,
           403: ErrorResponse,
           404: ErrorResponse,
+          429: ErrorResponse,
           500: ErrorResponse,
         },
         detail: {
@@ -52,7 +61,8 @@ export const createChatsRouter = ({
     )
     .get(
       "/:chatId/history",
-      async ({ decodedToken, params, chatService }) => {
+      async ({ decodedToken, params, chatService, set }) => {
+        await completionRateLimiter({ decodedToken, set });
         return await chatService.getChatHistory(decodedToken, params.chatId);
       },
       {
@@ -62,6 +72,7 @@ export const createChatsRouter = ({
           401: ErrorResponse,
           403: ErrorResponse,
           404: ErrorResponse,
+          429: ErrorResponse,
           500: ErrorResponse,
         },
         detail: {
@@ -73,8 +84,6 @@ export const createChatsRouter = ({
     .post(
       "/:chatId/completion",
       async function* ({ body, decodedToken, params, chatService, completionResponder, set }) {
-        await completionRateLimiter({ decodedToken, set });
-
         const streamingEnabled = await completionResponder.isStreamingEnabled();
 
         if (!streamingEnabled) {
