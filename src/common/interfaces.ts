@@ -19,7 +19,4 @@ export interface DecodedToken {
     sign_in_provider: string;
   };
   mappedProvider: string;
-
-  // In production, i'd use custom claims to store the database ID not to query user from the token's sub, uid etc. in each request.
-  //databaseId?: string;
 }

@@ -4,7 +4,6 @@ import { AuthUtils } from "../auth/auth-utils";
 import { UnauthorizedError, ValidationError } from "../common/errors";
 import type { DecodedToken } from "../common/interfaces";
 
-// --- Constants & Defaults ---
 const DEFAULT_MOCK_USER = {
   name: "Mock User",
   picture: "https://i.pravatar.cc/200",
@@ -44,7 +43,6 @@ export async function verifyMockFirebaseToken(token: string): Promise<DecodedTok
   if (token.startsWith("mock:")) {
     const params = parseMockToken(token);
 
-    // Merge defaults with parsed params
     const config = {
       id: params.id ?? randomUUID(),
       name: params.name ?? DEFAULT_MOCK_USER.name,

@@ -6,5 +6,5 @@ model Message {
   content   String   @db.Text
   createdAt DateTime @default(now())
 
-  @@index([chatId, createdAt])
+  @@index([chatId, createdAt, id])
 }

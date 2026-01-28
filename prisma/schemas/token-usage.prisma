@@ -10,5 +10,5 @@ model TokenUsage {
   createdAt    DateTime @default(now())
 
   @@index([userId, createdAt])
-  @@index([chatId])
+  @@index([chatId, createdAt])
 }

@@ -145,7 +145,6 @@ export class ChatService {
     const historyEnabled = await this.featureFlags.isEnabled("CHAT_HISTORY_ENABLED");
 
     if (!historyEnabled) {
-      // Free-tier/mobile: Return only last N messages without pagination
       const messages = await this.messageRepository.findMessages(chatId, {
         limit: RECENT_MESSAGES_LIMIT,
         recent: true,
@@ -162,7 +161,6 @@ export class ChatService {
       };
     }
 
-    // Full history with cursor-based pagination
     const maxLimit = await this.featureFlags.getNumber("PAGINATION_LIMIT");
     const requestedLimit = this.normalizeLimit(params?.limit, maxLimit);
     const pageSize = Math.min(requestedLimit, maxLimit);
