@@ -55,6 +55,7 @@ curl -X POST http://localhost:4000/api/chats/b2222222-2222-2222-2222-22222222222
 - `make shell`: Access the backend container.
 - `make db-seed`: Re-run database seeding.
 - `make clean`: Reset the entire environment including database volumes.
+- `make test`: Run tests
 
 
 ## Feature Flags
