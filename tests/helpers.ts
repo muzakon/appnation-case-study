@@ -6,6 +6,7 @@
 
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
+import { getRedis } from "../src/core/redis";
 import { PrismaClient } from "../src/database/prisma/client";
 
 let _prisma: PrismaClient | null = null;
@@ -93,4 +94,58 @@ export async function createTestUser(
       name: overrides.name ?? "Test User",
     },
   });
+}
+
+/**
+ * Create a test chat for a user.
+ */
+export async function createTestChat(
+  userId: string,
+  overrides: Partial<{
+    id: string;
+    title: string;
+  }> = {},
+) {
+  const prisma = getTestPrisma();
+  return prisma.chat.create({
+    data: {
+      id: overrides.id ?? crypto.randomUUID(),
+      title: overrides.title ?? "Test Chat",
+      userId,
+    },
+  });
+}
+
+/**
+ * Create a test message in a chat.
+ */
+export async function createTestMessage(
+  chatId: string,
+  overrides: Partial<{
+    role: "user" | "assistant";
+    content: string;
+  }> = {},
+) {
+  const prisma = getTestPrisma();
+  return prisma.message.create({
+    data: {
+      chatId,
+      role: overrides.role ?? "user",
+      content: overrides.content ?? "Hello",
+    },
+  });
+}
+
+/**
+ * Clean Redis data.
+ */
+export async function cleanRedis(): Promise<void> {
+  const redis = getRedis();
+  if ("sendCommand" in redis) {
+    await (redis as any).sendCommand(["FLUSHALL"]);
+  } else if ("flushall" in redis) {
+    await (redis as any).flushall();
+  } else if ("flushAll" in redis) {
+    await (redis as any).flushAll();
+  }
 }

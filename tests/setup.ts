@@ -45,9 +45,6 @@ async function createTestDatabase(): Promise<void> {
   }
 
   const connConfig = parseConnectionUrl(originalUrl);
-
-  // Connect to the default database to create the test database
-  // We connect to the 'postgres' database or the one in the URL to issue the CREATE DATABASE command
   const client = new Client({
     host: connConfig.host,
     port: connConfig.port,
@@ -58,13 +55,6 @@ async function createTestDatabase(): Promise<void> {
 
   try {
     await client.connect();
-
-    // Drop if exists and create fresh
-    // Note: We cannot drop the database we are connected to.
-    // Usually connecting to 'postgres' is safe for admin tasks.
-    // If connConfig.database is the same as TEST_DATABASE_NAME, we might have issues if we try to drop it while connected.
-    // However, usually DATABASE_URL points to the dev DB (e.g. appnation), and we create appnation_test.
-
     await client.query(`DROP DATABASE IF EXISTS "${TEST_DATABASE_NAME}"`);
     await client.query(`CREATE DATABASE "${TEST_DATABASE_NAME}"`);
 
@@ -80,7 +70,6 @@ function syncPrismaSchema(): void {
 
   console.log("[Test Setup] Syncing Prisma schema to test database...");
 
-  // Use prisma db push to sync schema without creating migrations
   execSync(`bunx prisma db push --accept-data-loss`, {
     env: { ...process.env, DATABASE_URL: testDatabaseUrl },
     stdio: "inherit",
@@ -109,7 +98,6 @@ async function dropTestDatabase(): Promise<void> {
 
   try {
     await client.connect();
-    // Force drop by terminating other connections first (Postgres specific)
     await client.query(`
       SELECT pg_terminate_backend(pg_stat_activity.pid)
       FROM pg_stat_activity
@@ -123,27 +111,22 @@ async function dropTestDatabase(): Promise<void> {
   }
 }
 
-// Global setup - runs once before all tests
+// Global setup
 export async function setup(): Promise<void> {
   console.log("[Test Setup] Starting test database setup...");
 
-  // Store original URL for cleanup
   originalDatabaseUrl = process.env.DATABASE_URL;
 
   await createTestDatabase();
   syncPrismaSchema();
 
-  // Set the DATABASE_URL for tests to use
   process.env.DATABASE_URL = getTestDatabaseUrl();
-
   console.log("[Test Setup] Test database ready");
 }
 
-// Global teardown - runs once after all tests
 export async function teardown(): Promise<void> {
   console.log("[Test Setup] Starting test database teardown...");
 
-  // Reset to original URL for cleanup
   if (originalDatabaseUrl) {
     process.env.DATABASE_URL = originalDatabaseUrl;
   }

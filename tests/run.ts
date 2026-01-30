@@ -15,17 +15,14 @@ async function run() {
   let exitCode = 0;
 
   try {
-    // Setup test database
     await setup();
 
-    // Mark that runner is handling lifecycle
     const env = {
       ...process.env,
       TEST_RUNNER_ACTIVE: "1",
       DATABASE_URL: getTestDatabaseUrl(),
     };
 
-    // Run bun test with forwarded arguments
     const args = process.argv.slice(2);
     const proc = spawn(["bun", "test", ...args], {
       env,
@@ -37,7 +34,7 @@ async function run() {
     console.error("[Test Runner] Error:", error);
     exitCode = 1;
   } finally {
-    // Always teardown, even on failure
+    // Ne olursa olsun, fail vb. bile olsa teardown'a girmesini istiyoruz.
     try {
       await teardown();
     } catch (teardownError) {

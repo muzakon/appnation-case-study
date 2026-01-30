@@ -32,13 +32,8 @@ if (skipDbSetup) {
       process.exit(0);
     });
   }
-
-  // Note: For direct `bun test`, teardown happens via signals or manual cleanup
-  // The test runner (run.ts) provides guaranteed teardown
 } else {
-  // Runner is active, ensure DATABASE_URL is set for test database
   process.env.DATABASE_URL = getTestDatabaseUrl();
 }
 
-// Export for manual use in tests if needed
 export { setup, teardown };
