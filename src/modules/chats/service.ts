@@ -226,7 +226,6 @@ export class ChatService {
       content: result.text,
     });
 
-    // Save token usage
     await this.tokenUsageRepository.create({
       userId,
       chatId,

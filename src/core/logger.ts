@@ -24,65 +24,102 @@ const COLORS = {
   meta: "\x1b[90m", // gray
 } as const;
 
+interface StructuredLog {
+  timestamp: string;
+  level: LogLevel;
+  context: string;
+  message: string;
+  [key: string]: unknown;
+}
+
 class Logger {
   private context: string;
   private minLevel: number;
-  private useColors: boolean;
+  private prettyPrint: boolean;
 
   constructor(context: string = "App") {
     this.context = context;
     this.minLevel = LOG_LEVELS[appSettings.logging.level as LogLevel] ?? LOG_LEVELS.info;
-    this.useColors = !appSettings.isProd && process.stdout.isTTY === true;
+    // Pretty print with colors in development TTY, structured JSON in production
+    this.prettyPrint = !appSettings.isProd && process.stdout.isTTY === true;
   }
 
   private shouldLog(level: LogLevel): boolean {
     return LOG_LEVELS[level] >= this.minLevel;
   }
 
-  private formatMessage(level: LogLevel, message: string, meta?: Record<string, unknown>): string {
-    const timestamp = new Date().toISOString();
-    const metaStr = meta ? ` ${JSON.stringify(meta)}` : "";
+  private buildLogEntry(
+    level: LogLevel,
+    message: string,
+    meta?: Record<string, unknown>,
+  ): StructuredLog {
+    return {
+      timestamp: new Date().toISOString(),
+      level,
+      context: this.context,
+      message,
+      ...meta,
+    };
+  }
 
-    if (this.useColors) {
-      const levelColor = COLORS[level];
-      const levelStr = level.toUpperCase().padEnd(5);
-      return (
-        `${COLORS.timestamp}${timestamp}${COLORS.reset} ` +
-        `${levelColor}${COLORS.bold}${levelStr}${COLORS.reset} ` +
-        `${COLORS.context}[${this.context}]${COLORS.reset} ` +
-        `${message}${COLORS.meta}${metaStr}${COLORS.reset}`
-      );
+  private formatPretty(entry: StructuredLog): string {
+    const { timestamp, level, context, message, ...meta } = entry;
+    const levelColor = COLORS[level];
+    const levelStr = level.toUpperCase().padEnd(5);
+    const metaStr = Object.keys(meta).length > 0 ? ` ${JSON.stringify(meta)}` : "";
+
+    return (
+      `${COLORS.timestamp}${timestamp}${COLORS.reset} ` +
+      `${levelColor}${COLORS.bold}${levelStr}${COLORS.reset} ` +
+      `${COLORS.context}[${context}]${COLORS.reset} ` +
+      `${message}${COLORS.meta}${metaStr}${COLORS.reset}`
+    );
+  }
+
+  private formatStructured(entry: StructuredLog): string {
+    return JSON.stringify(entry);
+  }
+
+  private log(level: LogLevel, message: string, meta?: Record<string, unknown>): void {
+    if (!this.shouldLog(level)) return;
+
+    const entry = this.buildLogEntry(level, message, meta);
+    const output = this.prettyPrint ? this.formatPretty(entry) : this.formatStructured(entry);
+
+    switch (level) {
+      case "debug":
+        console.debug(output);
+        break;
+      case "info":
+        console.info(output);
+        break;
+      case "warn":
+        console.warn(output);
+        break;
+      case "error":
+        console.error(output);
+        break;
     }
-
-    return `[${timestamp}] [${level.toUpperCase()}] [${this.context}] ${message}${metaStr}`;
   }
 
   debug(message: string, meta?: Record<string, unknown>): void {
-    if (this.shouldLog("debug")) {
-      console.debug(this.formatMessage("debug", message, meta));
-    }
+    this.log("debug", message, meta);
   }
 
   info(message: string, meta?: Record<string, unknown>): void {
-    if (this.shouldLog("info")) {
-      console.info(this.formatMessage("info", message, meta));
-    }
+    this.log("info", message, meta);
   }
 
   warn(message: string, meta?: Record<string, unknown>): void {
-    if (this.shouldLog("warn")) {
-      console.warn(this.formatMessage("warn", message, meta));
-    }
+    this.log("warn", message, meta);
   }
 
   error(message: string, error?: Error | unknown, meta?: Record<string, unknown>): void {
-    if (this.shouldLog("error")) {
-      const errorMeta =
-        error instanceof Error
-          ? { ...meta, errorMessage: error.message, stack: error.stack }
-          : { ...meta, error };
-      console.error(this.formatMessage("error", message, errorMeta));
-    }
+    const errorMeta =
+      error instanceof Error
+        ? { ...meta, error: { message: error.message, name: error.name, stack: error.stack } }
+        : { ...meta, error };
+    this.log("error", message, errorMeta);
   }
 
   child(context: string): Logger {

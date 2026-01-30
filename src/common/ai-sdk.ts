@@ -39,7 +39,7 @@ Let me know if you'd like me to take the next step or if there's anything specif
 
   private countTokens(text: string): number {
     // Simple word-based token estimation (roughly 1 token per word)
-    // In production, use a proper tokenizer like tiktoken
+    // In production, i'd use a proper tokenizer.
     const tokens = text.trim().split(/\s+/).filter(Boolean);
     return tokens.length === 0 ? 1 : tokens.length;
   }
