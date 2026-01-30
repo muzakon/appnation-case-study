@@ -45,5 +45,8 @@ db-migrate:
 db-seed:
 	docker compose exec app bunx prisma db seed
 
+test:
+	docker compose exec app bun tests/run.ts
+
 clean:
 	docker compose down -v

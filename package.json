@@ -2,7 +2,10 @@
   "name": "appnation-case-study",
   "version": "1.0.50",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "bun tests/run.ts",
+    "test:watch": "bun tests/run.ts --watch",
+    "test:e2e": "bun tests/run.ts tests/e2e",
+    "test:setup": "bunx prisma generate --config=tests/prisma.config.ts && bunx prisma db push --config=tests/prisma.config.ts --accept-data-loss",
     "dev": "bun run --watch src/server.ts",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
